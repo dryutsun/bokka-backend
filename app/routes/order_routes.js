@@ -1,6 +1,7 @@
 const express = require('express')
 const passport = require('passport')
 const Order = require('../models/order')
+const User = require('../models/user')
 const customErrors = require('../../lib/custom_errors')
 const handle404 = customErrors.handle404
 const requireOwnership = customErrors.requireOwnership
@@ -8,13 +9,52 @@ const requireOwnership = customErrors.requireOwnership
 // { example: { title: '', text: 'foo' } } -> { example: { text: 'foo' } }
 const removeBlanks = require('../../lib/remove_blank_fields')
 const requireToken = passport.authenticate('bearer', { session: false })
-
+const mongoose = require("mongoose")
 // instantiate a router (mini app that only handles routes)
 const router = express.Router()
 
 // INDEX
+// Show All Orders By One Owner
+router.get('/owner/:ownerid', requireToken, (req,res,next) => {
+	Order.find()
+		.then((orders)=> {
+			ownerOrders = orders.filter((order)=> order.owner.id === req.params.ownerid)
 
-router.get('/orders', requireToken, (req, res, next) => {
+			if (!ownerOrders || ownerOrders === 0 ) {
+				return next (new HttpError('Could not find any orders~!'))
+			}
+			
+			return ownerOrders.map((order) => order.toObject())
+		})
+		.then((orders) => res.status(200).json({ orders: orders}))
+		.catch(next)
+})
+
+// Show All Orders Assigned To One Porter
+//const user = UserModel.findOne({...});
+// const { _id, username, ...others } = user.toObject(); 
+router.get('/porter/:porterid', requireToken, (req,res,next) => {
+	// porterid = mongoose.Types.ObjectId(req.params.porterid)
+	console.log(req.params.porterid)
+	Order.find()
+		.then((orders)=> {
+			porterOrders = orders.filter((order) => {
+				orderString = ""+ order.porter // WTF WHY DOES THIS WORK
+				console.log(`ORDER.PORTER.ID: ${orderString} \t REQ.PARAM: ${req.params.porterid}`)
+				return orderString === req.params.porterid
+			})
+			if (!porterOrders || porterOrders === 0 ) {
+				return next (new HttpError('Could not find any orders~!'))
+			}
+			
+			return porterOrders.map((order) => order.toObject())
+		})
+		.then((orders) => res.status(200).json({ orders: orders}))
+		.catch(next)
+})
+
+// ! THIS WORKS
+router.get('/', requireToken, (req, res, next) => {
 	Order.find()
 		.then((orders) => {
 			return orders.map((order) => order.toObject())
@@ -23,39 +63,9 @@ router.get('/orders', requireToken, (req, res, next) => {
 		.catch(next)
 })
 
-// SHOW
-// GET /orders/5a7db6c74d55bc51bdf39793
-router.get('/orders/:id', requireToken, (req, res, next) => {
-	Order.findById(req.params.id)
-		.then(handle404)
-		.then((order) => res.status(200).json({ order: order.toObject() }))
-		.catch(next)
-})
-
-// SHOW Get All Orders From One Owner
-
-router.get('/orders/owner/:userid'), requireToken, (req,res,next) => {
-	Order.find({owner: req.params.id })
-		.then((orders)=> {
-			return orders.map((order) => order.toObject())
-		})
-		.then((orders) => res.status(200).json({ orders: orders}))
-		.catch(next)
-}
-
-// Show All Orders From One Porter
-router.get('/orders/porter/:userid'), requireToken, (req,res,next) => {
-	Order.find({porter: req.params.id })
-		.then((orders)=> {
-			return orders.map((order) => order.toObject())
-		})
-		.then((orders) => res.status(200).json({ orders: orders}))
-		.catch(next)
-}
-
 // CREATE
 // POST /orders
-router.post('/orders', requireToken, (req, res, next) => {
+router.post('/', requireToken, (req, res, next) => {
 	// set owner of new order to be current user
 	req.body.order.owner = req.user.id
 	Order.create(req.body.order)
@@ -65,11 +75,21 @@ router.post('/orders', requireToken, (req, res, next) => {
 		.catch(next)
 })
 
-//
+
+// SHOW
+// GET /orders/5a7db6c74d55bc51bdf39793
+// ! THIS WORKS
+router.get('/:id', requireToken, (req, res, next) => {
+	Order.findById(req.params.id)
+		.then(handle404)
+		.then((order) => res.status(200).json({ order: order.toObject() }))
+		.catch(next)
+})
 
 // UPDATE
 // PATCH /orders/5a7db6c74d55bc51bdf39793
-router.patch('/orders/:id', requireToken, removeBlanks, (req, res, next) => {
+// THIS WORKS: NEED TO REMOVE OWNERSHIP BECAUSE PORTER NEEDS TO CHANGE
+router.patch('/:id', requireToken, removeBlanks, (req, res, next) => {
 	// if the client attempts to change the `owner` property by including a new
 	// owner, prevent that by deleting that key/value pair
 	delete req.body.order.owner
@@ -79,7 +99,6 @@ router.patch('/orders/:id', requireToken, removeBlanks, (req, res, next) => {
 		.then((order) => {
 			// pass the `req` object and the Mongoose record to `requireOwnership`
 			// it will throw an error if the current user isn't the owner
-			requireOwnership(req, order)
 
 			// pass the result of Mongoose's `.update` to the next `.then`
 			return order.updateOne(req.body.order)
@@ -92,7 +111,7 @@ router.patch('/orders/:id', requireToken, removeBlanks, (req, res, next) => {
 
 // DESTROY
 // DELETE /orders/5a7db6c74d55bc51bdf39793
-router.delete('/orders/:id', requireToken, (req, res, next) => {
+router.delete('/:id', requireToken, (req, res, next) => {
 	Order.findById(req.params.id)
 		.then(handle404)
 		.then((order) => {
@@ -106,6 +125,16 @@ router.delete('/orders/:id', requireToken, (req, res, next) => {
 		// if an error occurs, pass it to the handler
 		.catch(next)
 })
+// SHOW Get All Orders From One Owner
+// ! THIS DOESNT WORK?
+// https://stackoverflow.com/questions/59138481/mongoose-find-by-reference-field
+//https://stackoverflow.com/questions/59907539/mongoose-casterror-cast-to-objectid-failed-for-value-at-path-id-for-mode
+// https://stackoverflow.com/questions/60070267/how-to-get-the-list-of-all-the-posts-by-a-particular-user-in-express-mongo
+
+// THERE IS A URL CONFLICT WITH ORDERITEM ROUTES
+//https://stackoverflow.com/questions/62225742/how-to-handle-404-response-with-mongoose
+
+
 
 module.exports = router
 

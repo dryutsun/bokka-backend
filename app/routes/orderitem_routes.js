@@ -8,13 +8,14 @@ const requireOwnership = customErrors.requireOwnership
 // { example: { title: '', text: 'foo' } } -> { example: { text: 'foo' } }
 const removeBlanks = require('../../lib/remove_blank_fields')
 const requireToken = passport.authenticate('bearer', { session: false })
+const orderItem = require('../models/orderitem')
 
 // instantiate a router (mini app that only handles routes)
 const router = express.Router()
 
 // INDEX
 // Get All Order Items from One Order
-router.get('orders/:orderid/', requireToken, (req, res, next) => {
+router.get('/:orderid', requireToken, (req, res, next) => {
 	Order.findById(req.params.orderid)
 		.then((orders) => {
 			return orders.orderItem.map((orderItem) => orderItem.toObject())
@@ -25,7 +26,7 @@ router.get('orders/:orderid/', requireToken, (req, res, next) => {
 
 // SHOW
 // GET One Order Item from One Order
-router.get('/orders/:orderid/:itemid', requireToken, (req, res, next) => {
+router.get('/:orderid/:itemid', requireToken, (req, res, next) => {
 	Order.findById(req.params.orderid)
 		.then((order) => {
 			return order.orderItem.id(req.params.itemid)
@@ -37,7 +38,7 @@ router.get('/orders/:orderid/:itemid', requireToken, (req, res, next) => {
 
 // CREATE ONE ORDER ITEM FROM ONE ORDER
 // POST /orders/:orderid
-router.post('/orders/:orderid', requireToken, (req, res, next) => {
+router.post('/:orderid', requireToken, (req, res, next) => {
 	// set owner of new order item to be current user
 	req.body.order.owner = req.user.id
 	Order.findById(req.params.order)
@@ -50,7 +51,7 @@ router.post('/orders/:orderid', requireToken, (req, res, next) => {
 
 // UPDATE
 // PATCH /orders/5a7db6c74d55bc51bdf39793
-router.patch('/orders/:orderid/:itemid', requireToken, removeBlanks, (req, res, next) => {
+router.patch('/:orderid/:itemid', requireToken, removeBlanks, (req, res, next) => {
 	// if the client attempts to change the `owner` property by including a new
 	// owner, prevent that by deleting that key/value pair
 	delete req.body.order.owner
@@ -72,7 +73,7 @@ router.patch('/orders/:orderid/:itemid', requireToken, removeBlanks, (req, res, 
 
 // DESTROY
 // DELETE /orders/5a7db6c74d55bc51bdf39793
-router.delete('/orders/:orderid/:itemid', requireToken, (req, res, next) => {
+router.delete('/:orderid/:itemid', requireToken, (req, res, next) => {
 	Order.findById(req.params.orderid)
 		.then(handle404)
 		.then((order) => {
