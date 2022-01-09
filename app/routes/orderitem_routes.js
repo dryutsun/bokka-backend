@@ -15,12 +15,17 @@ const router = express.Router()
 
 // INDEX
 // Get All Order Items from One Order
+// https://stackoverflow.com/questions/24414975/mongoose-populate-sub-sub-document
 router.get('/:orderid', requireToken, (req, res, next) => {
 	Order.findById(req.params.orderid)
 		.then((orders) => {
-			return orders.orderItem.map((orderItem) => orderItem.toObject())
+			console.log(orders.orderItems)
+			if (!orders.orderItems || orders.orderItems === 0 ) {
+				return next (new HttpError('Could not find any orders~!'))
+			}
+			return orders.orderItems.map((orderItem) => orderItem.toObject())
 		})
-		.then((orderItem) => res.status(200).json({ orderItem: orderItem }))
+		.then((orderItem) => res.status(200).json({ orderItems: orderItem }))
 		.catch(next)
 })
 
@@ -38,32 +43,31 @@ router.get('/:orderid/:itemid', requireToken, (req, res, next) => {
 
 // CREATE ONE ORDER ITEM FROM ONE ORDER
 // POST /orders/:orderid
+// ! WORKS, BUT IF NO RESPONSE HANGS
 router.post('/:orderid', requireToken, (req, res, next) => {
 	// set owner of new order item to be current user
-	req.body.order.owner = req.user.id
-	Order.findById(req.params.order)
+	// req.body.order.owner = req.user.id
+	console.log(req.body)
+	Order.findById(req.params.orderid)
 		.then((order) => {
-			order.orderItem.push(req.body.orderItem)
+			console.log(order.orderItems)
+			order.orderItems.push(req.body.orderItem)
 			return order.save()
 		})
+		.then(orderItem => res.status(201).json({ orderItem: orderItem.toObject() }))
 		.catch(next)
 })
 
 // UPDATE
 // PATCH /orders/5a7db6c74d55bc51bdf39793
 router.patch('/:orderid/:itemid', requireToken, removeBlanks, (req, res, next) => {
-	// if the client attempts to change the `owner` property by including a new
-	// owner, prevent that by deleting that key/value pair
-	delete req.body.order.owner
-
 	Order.findByIdAndUpdate(req.params.orderid)
 		.then(handle404)
 		.then((order) => {
-			// pass the `req` object and the Mongoose record to `requireOwnership`
-			// it will throw an error if the current user isn't the owner
-			requireOwnership(req, order)
-			// pass the result of Mongoose's `.update` to the next `.then`
-			return order.updateOne(req.body.order)
+            const orderItem = order.orderItems.id(req.params.itemid)			
+			orderItem.set(req.body.orderItem)
+			console.log(orderItem) // WTF THIS WORKED
+			return order.save()
 		})
 		// if that succeeded, return 204 and no JSON
 		.then(() => res.sendStatus(204))
