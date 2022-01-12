@@ -1,5 +1,17 @@
 const mongoose = require("mongoose");
 const orderItemSchema = require("./orderitem");
+
+function getValue(value) {
+  if (typeof value !== 'undefined') {
+     return parseFloat(value.toString());
+  }
+  return value;
+}
+
+
+
+
+
 const orderSchema = new mongoose.Schema(
   {
     title: {
@@ -27,16 +39,16 @@ const orderSchema = new mongoose.Schema(
     },
     orderItems: [orderItemSchema],
     orderOriginLong: {
-      type: mongoose.Types.Decimal128,
+      type: String
     },
     orderOriginLat: {
-      type: mongoose.Types.Decimal128,
+      type: String
     },
     orderDestLong: {
-      type: mongoose.Types.Decimal128,
+      type: String
     },
     orderDestLat: {
-      type: mongoose.Types.Decimal128,
+      type: String
     },
     order_accepted: {
       type: Date,

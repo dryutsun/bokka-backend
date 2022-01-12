@@ -18,6 +18,8 @@ const router = express.Router()
 // I can get it from the middleware
 router.get('/owner/:ownerid', requireToken, (req,res,next) => {
 	Order.find()
+		.populate('porter', 'email')
+		// .populate('owner')
 		.then((orders)=> {
 			console.log("first orders", orders[0].owner.toString())
 			ownerOrders = orders.filter((order) => {
@@ -33,7 +35,7 @@ router.get('/owner/:ownerid', requireToken, (req,res,next) => {
 			
 			return ownerOrders.map((order) => order.toObject())
 		})
-		.then((orders) => res.status(200).json({ orders: orders}))
+		.then((orders) => res.status(200).json({ orders: orders},))
 		.catch(next)
 })
 
@@ -45,6 +47,8 @@ router.get('/porter/:porterid', requireToken, (req,res,next) => {
 	// porterid = mongoose.Types.ObjectId(req.params.porterid)
 	console.log(req.params.porterid)
 	Order.find()
+		.populate('porter', 'email')
+		// .populate('owner')	
 		.then((orders)=> {
 			porterOrders = orders.filter((order) => {
 				orderString = ""+ order.porter // WTF WHY DOES THIS WORK
