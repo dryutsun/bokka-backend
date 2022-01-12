@@ -25,7 +25,6 @@ const requireToken = passport.authenticate("bearer", { session: false });
 // instantiate a router (mini app that only handles routes)
 const router = express.Router();
 
-
 // Utility Routes:
 router.get("/users", requireToken, (req, res, next) => {
   User.find()
@@ -35,8 +34,6 @@ router.get("/users", requireToken, (req, res, next) => {
     .then((users) => res.status(200).json({users: users}))
     .catch(next)
 })
-
-
 
 // SIGN UP
 // POST /sign-up
@@ -58,6 +55,7 @@ router.post("/sign-up", (req, res, next) => {
     .then(() => bcrypt.hash(req.body.credentials.password, bcryptSaltRounds))
     .then((hash) => {
       // return necessary params to create a user
+      console.log(req.body.credentials.porter)
       return {
         email: req.body.credentials.email,
         porter: req.body.credentials.porter,

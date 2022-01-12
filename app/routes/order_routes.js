@@ -45,20 +45,19 @@ router.get('/owner/:ownerid', requireToken, (req,res,next) => {
 // I can send the porterid as part of the payload of GET request
 router.get('/porter/:porterid', requireToken, (req,res,next) => {
 	// porterid = mongoose.Types.ObjectId(req.params.porterid)
-	console.log(req.params.porterid)
+	console.log("This PiD", req.params.porterid)
 	Order.find()
-		.populate('porter', 'email')
-		// .populate('owner')	
+		// .populate('porter', 'email id')
 		.then((orders)=> {
+			console.log(orders)
 			porterOrders = orders.filter((order) => {
-				orderString = ""+ order.porter // WTF WHY DOES THIS WORK
-				console.log(`ORDER.PORTER.ID: ${orderString} \t REQ.PARAM: ${req.params.porterid}`)
+				orderString = "" + order.porter // WTF WHY DOES THIS WORK
+				// console.log(`OS:${orderString} \t PiD: ${req.params.porterid}`)
+				console.log(orderString + " == " + req.params.porterid )
 				return orderString === req.params.porterid
-			})
-			if (!porterOrders || porterOrders === 0 ) {
-				return next (new HttpError('Could not find any orders~!'))
-			}
+			})	
 			
+			console.log(porterOrders)
 			return porterOrders.map((order) => order.toObject())
 		})
 		.then((orders) => res.status(200).json({ orders: orders}))
