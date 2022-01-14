@@ -21,17 +21,17 @@ router.get('/owner/:ownerid', requireToken, (req,res,next) => {
 		.populate('porter', 'email')
 		// .populate('owner')
 		.then((orders)=> {
-			console.log("first orders", orders[0].owner.toString())
+			// console.log("first orders", orders[0].owner.toString())
 			ownerOrders = orders.filter((order) => {
 				orderString = "" + order.owner // WTF WHY DOES THIS WORK! Ask tim..
-				console.log(`ORDER.PORTER.ID: ${orderString} \t REQ.PARAM: ${req.params.porterid}`)
+				// console.log(`ORDER.PORTER.ID: ${orderString} \t REQ.PARAM: ${req.params.porterid}`)
 				return orderString === req.params.ownerid
 			})
 
 			// if (!ownerOrders || ownerOrders === 0 ) {
 			// 	return next (new HttpError('Could not find any orders~!'))
 			// }
-			console.log(ownerOrders)
+			// console.log(ownerOrders)
 			
 			return ownerOrders.map((order) => order.toObject())
 		})
@@ -53,7 +53,7 @@ router.get('/porter/:porterid', requireToken, (req,res,next) => {
 			porterOrders = orders.filter((order) => {
 				orderString = "" + order.porter // WTF WHY DOES THIS WORK
 				// console.log(`OS:${orderString} \t PiD: ${req.params.porterid}`)
-				console.log(orderString + " == " + req.params.porterid )
+				// console.log(orderString + " == " + req.params.porterid )
 				return orderString === req.params.porterid
 			})	
 			
